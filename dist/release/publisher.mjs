@@ -1,36 +1,22 @@
-import { copyFileSync, existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
+import { copyFileSync, mkdtempSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { PublishError } from '../core/errors.mjs';
 import { isRecord } from '../core/fs.mjs';
-/** Release body: the version's CHANGELOG section, the app's notes file, then package checksums. */
+/** Release body: the version's changes, the app's notes file, then package checksums. */
 export class ReleaseNotes {
     config;
     constructor(config) {
         this.config = config;
     }
-    render(version, files) {
-        const parts = [this.changelog(version), this.notesFile(version)].filter((part) => part !== '');
-        parts.push(`## SHA256\n\n${files.map((file) => `- \`${file.path}\`: \`${file.sha256}\``).join('\n')}`);
-        return `${parts.join('\n\n')}\n`;
-    }
-    /** Body of the `## [version]` section release-please writes, without its heading. */
-    changelog(version) {
-        const file = path.join(this.config.repoRoot, 'CHANGELOG.md');
-        if (!existsSync(file))
-            return '';
-        const lines = readFileSync(file, 'utf8').replaceAll('\r', '').split('\n');
-        const heading = new RegExp(`^##\\s+\\[?${version.replaceAll('.', '\\.').replaceAll('+', '\\+')}\\]?(\\s|\\(|$)`);
-        const start = lines.findIndex((line) => heading.test(line));
-        if (start === -1)
-            return '';
-        const end = lines.findIndex((line, index) => index > start && /^##\s/.test(line));
-        const body = lines.slice(start + 1, end === -1 ? undefined : end).join('\n').trim();
-        return body === '' ? '' : `## 更新内容\n\n${body}`;
-    }
-    notesFile(version) {
+    render(version, files, changes) {
         const file = this.config.release.notesFile;
-        return file === undefined ? '' : readFileSync(file, 'utf8').replaceAll('{version}', version).trim();
+        const parts = [
+            changes === undefined || changes.trim() === '' ? '' : `## 更新内容\n\n${changes.trim()}`,
+            file === undefined ? '' : readFileSync(file, 'utf8').replaceAll('{version}', version).trim(),
+        ].filter((part) => part !== '');
+        parts.push(`## SHA256\n\n${files.map((item) => `- \`${item.path}\`: \`${item.sha256}\``).join('\n')}`);
+        return `${parts.join('\n\n')}\n`;
     }
 }
 /**
@@ -78,7 +64,7 @@ export class Publisher {
             const sameRepo = repo === process.env['GITHUB_REPOSITORY'];
             this.process.run({
                 command: 'gh',
-                args: ['release', 'create', options.tag, '--repo', repo, '--title', title, '--notes', this.notes.render(version, files), ...(sameRepo ? ['--verify-tag'] : []), ...assets],
+                args: ['release', 'create', options.tag, '--repo', repo, '--title', title, '--notes', this.notes.render(version, files, options.changes), ...(sameRepo ? ['--verify-tag'] : []), ...assets],
                 env: { GH_TOKEN: process.env['RELEASE_TOKEN'] ?? process.env['GH_TOKEN'] ?? '' },
             });
             this.logger.info('published', { repo, tag: options.tag, packages: assets.length });

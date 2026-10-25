@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 import path from 'node:path';
+import { readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
 import { DesktopKitError, UsageError } from './core/errors.mjs';
 import { ConsoleLogger } from './core/logger.mjs';
@@ -9,7 +10,9 @@ const USAGE = `Usage: desktop-kit <command> [options]   (run from the app direct
   version [tag]            print the agreed app version; with a tag, also check it matches
   build [--skip-verify]    verify gate, tauri build, dist/candidate-<platform> (+ dist/<product> on Windows)
   candidate verify <dir>   check a candidate directory's manifest, file set and hashes
-  publish <tag> [--from <dir>]   publish verified candidates (default dir: dist/candidates)
+  publish <tag> [--from <dir>] [--changes <file>]
+                           publish verified candidates (default dir: dist/candidates); --changes is
+                           this version's notes, e.g. \`release-kit notes <version> > changes.md\`
   dev [args]               tauri dev
   cargo <args>             cargo on the Tauri workspace
   clean [--deep]           remove build output (keeps every data/ dir); --deep also node_modules
@@ -23,7 +26,7 @@ function main(argv) {
         args: passthrough ? [] : rest,
         allowPositionals: true,
         strict: true,
-        options: { 'skip-verify': { type: 'boolean' }, deep: { type: 'boolean' }, from: { type: 'string' } },
+        options: { 'skip-verify': { type: 'boolean' }, deep: { type: 'boolean' }, from: { type: 'string' }, changes: { type: 'string' } },
     });
     const appDir = process.env['DESKTOP_KIT_APP'] ?? process.cwd();
     const logger = new ConsoleLogger('desktop-kit');
@@ -44,7 +47,11 @@ function main(argv) {
         case 'publish':
             if (first === undefined)
                 throw new UsageError('publish <tag>');
-            kit.publisher().publish({ tag: first, from: path.resolve(kit.config.appDir, parsed.values.from ?? 'dist/candidates') });
+            kit.publisher().publish({
+                tag: first,
+                from: path.resolve(kit.config.appDir, parsed.values.from ?? 'dist/candidates'),
+                changes: parsed.values.changes === undefined ? undefined : readFileSync(path.resolve(parsed.values.changes), 'utf8'),
+            });
             return;
         case 'dev':
             kit.dev(rest);

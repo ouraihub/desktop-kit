@@ -34,7 +34,7 @@ Windows 首次使用：在安装了依赖的目录运行 `node_modules\@ouraihub
 | `desktop-kit version [tag]` | 输出统一的版本号；带 tag 时还检查 tag 是否等于 `tagPrefix + 版本` |
 | `desktop-kit build [--skip-verify]` | 本机平台的发布构建，产物写到 `dist/candidate-<平台>/`；Windows 还会更新 `dist/<产品名>/` 里的 exe（不动旁边的 `data/`） |
 | `desktop-kit candidate verify <dir>` | 校验候选包目录：身份、文件集合、大小、哈希 |
-| `desktop-kit publish <tag> [--from <dir>]` | 把各平台候选包发布为 GitHub Release（默认读 `dist/candidates/`） |
+| `desktop-kit publish <tag> [--from <dir>] [--changes <file>]` | 把各平台候选包发布为 GitHub Release（默认读 `dist/candidates/`）；`--changes` 是本版更新内容，放在说明最前 |
 | `desktop-kit dev [参数]` | `tauri dev` |
 | `desktop-kit cargo <参数>` | 对 Tauri workspace 运行 cargo（Windows 先注入 MSVC） |
 | `desktop-kit clean [--deep]` | 删除编译产物；`--deep` 再删全部 `node_modules`，之后 `pnpm install` 恢复 |
@@ -58,7 +58,7 @@ Windows 首次使用：在安装了依赖的目录运行 `node_modules\@ouraihub
 | `portable.binaries` | `[]` | 一起放进便携版的其他 cargo 包（如命令行工具） |
 | `release.repo` | 当前仓库 | 发布到的仓库 `owner/name` |
 | `release.title` | `<产品名> {version}` | 发布标题 |
-| `release.notes` | — | 发布说明文件，`{version}` 会被替换；CHANGELOG 中该版本的段落自动放在最前 |
+| `release.notes` | — | 固定的发布说明文件（下载说明、系统要求），`{version}` 会被替换 |
 | `release.workflow` | — | 设置后，只接受该 workflow 在 main 上成功运行、且正好是 tag 所在提交的候选包 |
 | `release.buildJob` | `Build ({platform})` | 每个平台构建 job 的名称 |
 | `clean.paths` / `clean.deepPaths` | `[]` | 额外要清理的路径（普通 / `--deep`） |
@@ -79,6 +79,13 @@ Windows 首次使用：在安装了依赖的目录运行 `node_modules\@ouraihub
 ```
 
 发布 job 把各平台的 artifact 下载到 `dist/candidates/candidate-<platform>/`，然后运行 `pnpm exec desktop-kit publish "$TAG"`。需要 `GH_TOKEN`；跨仓库发布另需 `RELEASE_TOKEN`。
+
+版本号、CHANGELOG、发布 PR 和打 tag 由 [release-kit](https://github.com/ouraihub/release-kit) 负责，desktop-kit 不重复实现。用了 release-kit 的项目把本版更新内容交给 publish：
+
+```bash
+npx --yes github:ouraihub/release-kit#v0 notes "$VERSION" > changes.md
+pnpm exec desktop-kit publish "$TAG" --changes changes.md
+```
 
 ## 开发
 

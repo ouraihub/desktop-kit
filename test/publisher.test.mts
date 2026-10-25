@@ -33,7 +33,6 @@ class FakeGitHub implements CommandRunner {
 
 function setup(desktopKit: object, runId = '77') {
   const fixture = makeApp({ desktopKit: { platforms: ['windows', 'linux'], tagPrefix: 'desktop-v', ...desktopKit } })
-  write(path.join(fixture.repo, 'CHANGELOG.md'), '# Changelog\n\n## [1.2.3](x) (2026-10-25)\n\n- 新功能 A\n\n## [1.2.2]\n\n- old\n')
   const config = loadConfig(fixture.app)
   const store = new CandidateStore('Fixture', 'zip')
   const from = path.join(fixture.app, 'dist', 'candidates')
@@ -52,13 +51,12 @@ test('publishes exactly the verified packages with changelog and checksums', () 
   process.env['GITHUB_REPOSITORY'] = 'org/app'
   const { repo, github, publisher, from } = setup({ release: { repo: 'org/public', workflow: '.github/workflows/desktop.yml' } })
   try {
-    publisher.publish({ tag: 'desktop-v1.2.3', from })
+    publisher.publish({ tag: 'desktop-v1.2.3', from, changes: '- 新功能 A\n' })
     const [spec] = github.created
     assert.ok(spec !== undefined)
     assert.deepEqual(spec.args.slice(0, 6), ['release', 'create', 'desktop-v1.2.3', '--repo', 'org/public', '--title'])
     const notes = spec.args[spec.args.indexOf('--notes') + 1] ?? ''
     assert.match(notes, /## 更新内容\n\n- 新功能 A\n\n## SHA256/)
-    assert.doesNotMatch(notes, /old/)
     assert.deepEqual(
       spec.args.filter((arg) => path.isAbsolute(arg)).map((file) => path.basename(file)),
       ['Fixture-windows-setup.exe', 'Fixture-windows-portable.zip', 'Fixture-linux-x64.AppImage', 'Fixture-linux-x64.deb'],

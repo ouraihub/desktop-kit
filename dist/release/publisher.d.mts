@@ -7,15 +7,14 @@ export interface PublishOptions {
     readonly tag: string;
     /** Directory holding candidate-<platform>/ for every configured platform. */
     readonly from: string;
+    /** This version's changes, e.g. `release-kit notes <version>` output; omitted when undefined. */
+    readonly changes?: string | undefined;
 }
-/** Release body: the version's CHANGELOG section, the app's notes file, then package checksums. */
+/** Release body: the version's changes, the app's notes file, then package checksums. */
 export declare class ReleaseNotes {
     private readonly config;
     constructor(config: KitConfig);
-    render(version: string, files: readonly PublicFile[]): string;
-    /** Body of the `## [version]` section release-please writes, without its heading. */
-    private changelog;
-    private notesFile;
+    render(version: string, files: readonly PublicFile[], changes: string | undefined): string;
 }
 /**
  * Publishes verified candidates as a GitHub Release. Never builds: every package must come from
