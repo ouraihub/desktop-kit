@@ -34,7 +34,7 @@ Windows 首次使用：在安装了依赖的目录运行 `node_modules\@ouraihub
 | `desktop-kit version [tag]` | 输出统一的版本号；带 tag 时还检查 tag 是否等于 `tagPrefix + 版本` |
 | `desktop-kit build [--skip-verify]` | 本机平台的发布构建，产物写到 `dist/candidate-<平台>/`；Windows 还会更新 `dist/<产品名>/` 里的 exe（不动旁边的 `data/`） |
 | `desktop-kit candidate verify <dir>` | 校验候选包目录：身份、文件集合、大小、哈希 |
-| `desktop-kit publish <tag> [--from <dir>] [--changes <file>]` | 把各平台候选包发布为 GitHub Release（默认读 `dist/candidates/`）；`--changes` 是本版更新内容，放在说明最前 |
+| `desktop-kit publish <tag> [--from <dir>] [--changes <file>] [--run <id>]` | 把各平台候选包发布为 GitHub Release（默认读 `dist/candidates/`）；`--changes` 是本版更新内容，放在说明最前；`--run` 是下载候选包所用的 workflow run，候选包必须正是它构建的 |
 | `desktop-kit dev [参数]` | `tauri dev` |
 | `desktop-kit cargo <参数>` | 对 Tauri workspace 运行 cargo（Windows 先注入 MSVC） |
 | `desktop-kit clean [--deep]` | 删除编译产物；`--deep` 再删全部 `node_modules`，之后 `pnpm install` 恢复 |

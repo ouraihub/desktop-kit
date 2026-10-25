@@ -9,6 +9,8 @@ export interface PublishOptions {
     readonly from: string;
     /** This version's changes, e.g. `release-kit notes <version>` output; omitted when undefined. */
     readonly changes?: string | undefined;
+    /** The run the caller downloaded candidates from; every manifest's buildRunId must equal it. */
+    readonly runId?: string | undefined;
 }
 /** Release body: the version's changes, the app's notes file, then package checksums. */
 export declare class ReleaseNotes {

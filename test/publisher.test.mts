@@ -107,4 +107,11 @@ test('refuses wrong tags, foreign runs and runs missing a successful build job',
   } finally {
     rmSync(local.repo, { recursive: true, force: true })
   }
+  const other = setup({ release: { workflow: '.github/workflows/desktop.yml' } })
+  try {
+    assert.throws(() => other.publisher.publish({ tag: 'desktop-v1.2.3', from: other.from, runId: '78' }), /built by run 77, not the selected run 78/)
+    assert.equal(other.github.created.length, 0)
+  } finally {
+    rmSync(other.repo, { recursive: true, force: true })
+  }
 })

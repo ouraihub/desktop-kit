@@ -15,6 +15,8 @@ export interface PublishOptions {
   readonly from: string
   /** This version's changes, e.g. `release-kit notes <version>` output; omitted when undefined. */
   readonly changes?: string | undefined
+  /** The run the caller downloaded candidates from; every manifest's buildRunId must equal it. */
+  readonly runId?: string | undefined
 }
 
 /** Release body: the version's changes, the app's notes file, then package checksums. */
@@ -56,6 +58,8 @@ export class Publisher {
     const runIds = [...new Set(manifests.map((manifest) => manifest.buildRunId))]
     const runId = runIds[0]
     if (runId === undefined || runIds.length !== 1) throw new PublishError(`Candidates must come from one run, found: ${runIds.join(', ')}`)
+    if (options.runId !== undefined && options.runId !== runId)
+      throw new PublishError(`Candidates were built by run ${runId}, not the selected run ${options.runId}`)
     if (this.config.release.workflow !== undefined) this.verifyRun(runId, sourceSha)
 
     const stage = mkdtempSync(path.join(tmpdir(), 'desktop-kit-release-'))

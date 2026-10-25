@@ -50,6 +50,8 @@ export class Publisher {
         const runId = runIds[0];
         if (runId === undefined || runIds.length !== 1)
             throw new PublishError(`Candidates must come from one run, found: ${runIds.join(', ')}`);
+        if (options.runId !== undefined && options.runId !== runId)
+            throw new PublishError(`Candidates were built by run ${runId}, not the selected run ${options.runId}`);
         if (this.config.release.workflow !== undefined)
             this.verifyRun(runId, sourceSha);
         const stage = mkdtempSync(path.join(tmpdir(), 'desktop-kit-release-'));

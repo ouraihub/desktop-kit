@@ -11,7 +11,7 @@ const USAGE = `Usage: desktop-kit <command> [options]   (run from the app direct
   version [tag]            print the agreed app version; with a tag, also check it matches
   build [--skip-verify]    verify gate, tauri build, dist/candidate-<platform> (+ dist/<product> on Windows)
   candidate verify <dir>   check a candidate directory's manifest, file set and hashes
-  publish <tag> [--from <dir>] [--changes <file>]
+  publish <tag> [--from <dir>] [--changes <file>] [--run <id>]
                            publish verified candidates (default dir: dist/candidates); --changes is
                            this version's notes, e.g. \`release-kit notes <version> > changes.md\`
   dev [args]               tauri dev
@@ -37,7 +37,7 @@ function main(argv) {
         args: passthrough ? [] : rest,
         allowPositionals: true,
         strict: true,
-        options: { 'skip-verify': { type: 'boolean' }, deep: { type: 'boolean' }, from: { type: 'string' }, changes: { type: 'string' } },
+        options: { 'skip-verify': { type: 'boolean' }, deep: { type: 'boolean' }, from: { type: 'string' }, changes: { type: 'string' }, run: { type: 'string' } },
     });
     const appDir = process.env['DESKTOP_KIT_APP'] ?? process.cwd();
     const logger = new ConsoleLogger('desktop-kit');
@@ -62,6 +62,7 @@ function main(argv) {
                 tag: first,
                 from: path.resolve(kit.config.appDir, parsed.values.from ?? 'dist/candidates'),
                 changes: parsed.values.changes === undefined ? undefined : readFileSync(path.resolve(parsed.values.changes), 'utf8'),
+                runId: parsed.values.run,
             });
             return;
         case 'dev':
