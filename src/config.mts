@@ -22,7 +22,7 @@ export interface KitConfig {
   readonly forbidTauriVersion: boolean
   readonly portable: {
     readonly format: PortableFormat
-    /** Extra files copied next to the exe, each kept at its basename. */
+    /** Extra files in the portable zip: inside the app they keep their relative path, outside it their basename. */
     readonly files: readonly string[]
     /** Extra cargo packages built in release and shipped next to the main exe (binary = package name). */
     readonly binaries: readonly string[]

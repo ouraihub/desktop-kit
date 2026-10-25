@@ -1,4 +1,4 @@
-import { copyFileSync, existsSync, mkdirSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, renameSync, rmSync, statSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import path from 'node:path'
 import type { CargoProject } from '../cargo.mjs'
@@ -68,14 +68,19 @@ export class ReleaseBuilder {
     const release = path.join(this.cargo.targetDir, spec.triple, 'release')
     const sources = new Map<PackageKind, string>()
     for (const kind of spec.bundles as readonly Exclude<PackageKind, 'portable'>[]) sources.set(kind, this.freshBundle(release, kind, version, started))
-    if (platform === 'windows') sources.set('portable', this.windowsPortable(release, version, sources))
-    const manifest = this.candidates.write(
-      path.join(this.config.appDir, 'dist', `candidate-${platform}`),
-      { version, platform, sourceSha, buildRunId: process.env['GITHUB_RUN_ID'] ?? 'local' },
-      sources,
-    )
-    for (const artifact of manifest.artifacts) this.logger.info('package', { file: artifact.path, size: artifact.size })
-    return manifest
+    const stage = mkdtempSync(path.join(tmpdir(), `desktop-kit-${this.config.productName}-`))
+    try {
+      if (platform === 'windows') sources.set('portable', this.windowsPortable(release, version, sources, stage))
+      const manifest = this.candidates.write(
+        path.join(this.config.appDir, 'dist', `candidate-${platform}`),
+        { version, platform, sourceSha, buildRunId: process.env['GITHUB_RUN_ID'] ?? 'local' },
+        sources,
+      )
+      for (const artifact of manifest.artifacts) this.logger.info('package', { file: artifact.path, size: artifact.size })
+      return manifest
+    } finally {
+      rmSync(stage, { recursive: true, force: true })
+    }
   }
 
   private freshBundle(release: string, kind: Exclude<PackageKind, 'portable'>, version: string, started: number): string {
@@ -98,51 +103,53 @@ export class ReleaseBuilder {
     return [main, ...this.config.portable.binaries.map((name) => `${name}.exe`)].map((name) => path.join(release, name))
   }
 
-  private windowsPortable(release: string, version: string, sources: ReadonlyMap<PackageKind, string>): string {
+  /** Returns the portable package path; a zip is built inside `stage`. */
+  private windowsPortable(release: string, version: string, sources: ReadonlyMap<PackageKind, string>, stage: string): string {
     const executables = this.executables(release)
-    for (const exe of executables) regularFile(exe)
     const main = executables[0] as string
+    // Files inside the app keep their relative path (lib/ffmpeg.exe); others (../LICENSE) go to the root.
+    const entries: readonly (readonly [string, string])[] = [
+      ...executables.map((file) => [file, path.basename(file)] as const),
+      ...this.config.portable.files.map((file) => {
+        const relative = path.relative(this.config.appDir, file)
+        return [file, relative.startsWith('..') ? path.basename(file) : relative] as const
+      }),
+    ]
+    for (const [file] of entries) regularFile(file)
     this.windows.assertVersion(main, version)
     this.windows.assertVersion(sources.get('nsis') as string, version)
-    this.refreshLocalInstall(executables)
+    this.refreshLocalInstall(entries)
     if (this.config.portable.format === 'exe') return main
 
     const product = this.config.productName
-    const stage = path.join(tmpdir(), `desktop-kit-${product}-${process.pid}-${Date.now()}`)
     const payload = path.join(stage, product)
-    mkdirSync(payload, { recursive: true })
-    try {
-      const shipped = [...executables, ...this.config.portable.files]
-      for (const file of shipped) {
-        regularFile(file)
-        copyFileSync(file, path.join(payload, path.basename(file)))
-      }
-      const zip = path.join(stage, `${product}.zip`)
-      this.windows.zip(payload, zip)
-      this.windows.assertZipEntries(zip, product, shipped.map((file) => path.basename(file)))
-      const kept = path.join(this.config.appDir, 'dist', `.portable-${product}.zip`)
-      rmSync(kept, { force: true })
-      copyFileSync(zip, kept)
-      return kept
-    } finally {
-      rmSync(stage, { recursive: true, force: true })
+    for (const [file, entry] of entries) {
+      mkdirSync(path.dirname(path.join(payload, entry)), { recursive: true })
+      copyFileSync(file, path.join(payload, entry))
     }
+    const zip = path.join(stage, `${product}.zip`)
+    this.windows.zip(payload, zip)
+    this.windows.assertZipEntries(zip, product, entries.map(([, entry]) => entry.replaceAll('\\', '/')))
+    return zip
   }
 
-  /** dist/<product>/ is where developers run the app with its data/ beside it: swap exes in place only. */
-  private refreshLocalInstall(executables: readonly string[]): void {
+  /**
+   * dist/<product>/ is where developers run the app with its data/ beside it: replace the shipped
+   * files in place (each via a temporary + rename) and never touch anything else there.
+   */
+  private refreshLocalInstall(entries: readonly (readonly [string, string])[]): void {
     const local = path.join(this.config.appDir, 'dist', this.config.productName)
     rejectLinks(local)
-    mkdirSync(local, { recursive: true })
-    for (const exe of executables) {
-      const destination = path.join(local, path.basename(exe))
+    for (const [file, entry] of entries) {
+      const destination = path.join(local, entry)
+      mkdirSync(path.dirname(destination), { recursive: true })
       const temporary = `${destination}.new`
-      copyFileSync(exe, temporary)
+      copyFileSync(file, temporary)
       try {
         renameSync(temporary, destination)
       } catch (error) {
         rmSync(temporary, { force: true })
-        throw new ArtifactError(`Cannot replace ${destination}`, { cause: error, hint: `Close the running ${path.basename(exe)} and rebuild` })
+        throw new ArtifactError(`Cannot replace ${destination}`, { cause: error, hint: `Close the running ${this.config.productName} and rebuild` })
       }
     }
     this.logger.info('local install refreshed', { dir: local })

@@ -28,8 +28,12 @@ export declare class ReleaseBuilder {
     private freshBundle;
     /** Executable names as built: Tauri renames the main binary to productName unless mainBinaryName is set. */
     private executables;
+    /** Returns the portable package path; a zip is built inside `stage`. */
     private windowsPortable;
-    /** dist/<product>/ is where developers run the app with its data/ beside it: swap exes in place only. */
+    /**
+     * dist/<product>/ is where developers run the app with its data/ beside it: replace the shipped
+     * files in place (each via a temporary + rename) and never touch anything else there.
+     */
     private refreshLocalInstall;
     /** Tauri bundles need icon.icns on macOS; generate it from icons/icon.png when the repo has none. */
     private prepareMacIcon;
