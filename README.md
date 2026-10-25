@@ -90,4 +90,4 @@ pnpm exec desktop-kit publish "$TAG" --changes changes.md
 
 ## 开发
 
-源码是 `src/*.mts`（TypeScript，严格模式），编译到 `dist/*.mjs` 并提交，这样通过 git 安装时不需要构建。改源码后运行 `pnpm run build`；`pnpm run check` 会做类型检查、重新编译、确认 `dist/` 与源码一致，再跑测试。`.bat` 文件必须保持 CRLF 和纯 ASCII。
+源码是 `src/*.mts`（TypeScript，严格模式），编译到 `dist/*.mjs` 并提交，这样通过 git 安装时不需要构建。改源码后运行 `pnpm run build`；`pnpm run check` 会做类型检查、重新编译、确认 `dist/`、`dist-test/` 与源码一致，再跑测试。测试也随包发布：应用可以在自己的 CI 里运行 `desktop-kit self-test`，确认锁定的这个版本本身是好的。`.bat` 文件必须保持 CRLF 和纯 ASCII。

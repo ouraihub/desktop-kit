@@ -19,13 +19,14 @@
   },
   "files": [
     "dist",
+    "dist-test",
     "msvc"
   ],
   "scripts": {
-    "build": "tsc -p tsconfig.json",
-    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
-    "test": "node --test \"test/*.test.mts\"",
-    "check": "pnpm run typecheck && pnpm run build && git diff --exit-code -- dist && pnpm run test"
+    "build": "tsc -p tsconfig.json && tsc -p test/tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json --noEmit",
+    "test": "node dist/cli.mjs self-test",
+    "check": "pnpm run typecheck && pnpm run build && git diff --exit-code -- dist dist-test && pnpm run test"
   },
   "devDependencies": {
     "@types/node": "24.10.1",
