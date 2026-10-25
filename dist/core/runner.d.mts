@@ -21,8 +21,8 @@ export declare class ProcessRunner implements CommandRunner {
     constructor(logger: Logger);
     run(spec: CommandSpec): void;
     capture(spec: CommandSpec): string;
-    /** `verbatim` passes args unescaped on Windows, which `cmd /s /c "..."` requires. */
-    exec(spec: CommandSpec, options: SpawnSyncOptions, verbatim: boolean): string;
+    /** `verbatim` passes args unescaped on Windows, which `cmd /s /c "..."` requires; `label` names the tool in errors. */
+    exec(spec: CommandSpec, options: SpawnSyncOptions, verbatim: boolean, label?: string): string;
 }
 /**
  * Runs toolchain commands (cargo, pnpm, tauri). On Windows they go through cmd with the portable

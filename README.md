@@ -61,6 +61,7 @@ Windows 首次使用：在安装了依赖的目录运行 `node_modules\@ouraihub
 | `release.notes` | — | 固定的发布说明文件（下载说明、系统要求），`{version}` 会被替换 |
 | `release.workflow` | — | 设置后，只接受该 workflow 在 main 上成功运行、且正好是 tag 所在提交的候选包 |
 | `release.buildJob` | `Build ({platform})` | 每个平台构建 job 的名称 |
+| `release.generateNotes` | `false` | 在说明末尾追加 GitHub 自动生成的提交/PR 列表（`--generate-notes`） |
 | `clean.paths` / `clean.deepPaths` | `[]` | 额外要清理的路径（普通 / `--deep`） |
 
 版本号必须在 `package.json`、Tauri crate 的 `Cargo.toml`（支持 `version.workspace = true`）和 `tauri.conf.json`（如果写了）里完全一致。

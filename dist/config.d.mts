@@ -29,6 +29,8 @@ export interface KitConfig {
         /** When set, publish only accepts candidates from a successful push run of this workflow on main. */
         readonly workflow: string | undefined;
         readonly buildJob: string;
+        /** Append GitHub's generated "what changed" list (`gh release create --generate-notes`). */
+        readonly generateNotes: boolean;
     };
     readonly clean: {
         readonly paths: readonly string[];

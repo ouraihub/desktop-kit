@@ -67,6 +67,20 @@ test('publishes exactly the verified packages with changelog and checksums', () 
   }
 })
 
+test('same-repo releases verify the pushed tag; generateNotes appends GitHub notes', () => {
+  process.env['GITHUB_REPOSITORY'] = 'org/app'
+  const { repo, github, publisher, from } = setup({ release: { generateNotes: true } })
+  try {
+    publisher.publish({ tag: 'desktop-v1.2.3', from })
+    const args = github.created[0]?.args ?? []
+    assert.ok(args.includes('--verify-tag'))
+    assert.ok(args.includes('--generate-notes'))
+    assert.doesNotMatch(args[args.indexOf('--notes') + 1] ?? '', /更新内容/, 'no changes section without --changes')
+  } finally {
+    rmSync(repo, { recursive: true, force: true })
+  }
+})
+
 test('refuses wrong tags, foreign runs and runs missing a successful build job', () => {
   process.env['GITHUB_REPOSITORY'] = 'org/app'
   const cases: readonly [(github: FakeGitHub) => void, string, RegExp][] = [

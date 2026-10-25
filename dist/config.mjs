@@ -85,7 +85,7 @@ export function loadConfig(appDir) {
     const binaries = portable.strings('binaries');
     if (format === 'exe' && (files.length > 0 || binaries.length > 0))
         throw new ConfigError('A portable "exe" is the bare executable; use format "zip" to ship extra files or binaries');
-    const release = root.section('release', ['repo', 'title', 'notes', 'workflow', 'buildJob']);
+    const release = root.section('release', ['repo', 'title', 'notes', 'workflow', 'buildJob', 'generateNotes']);
     const repo = release.string('repo');
     if (repo !== undefined && !/^[\w.-]+\/[\w.-]+$/.test(repo))
         throw new ConfigError('desktopKit.release.repo must be owner/name');
@@ -109,6 +109,7 @@ export function loadConfig(appDir) {
             notesFile: notes === undefined ? undefined : resolve(notes),
             workflow: release.string('workflow'),
             buildJob: release.string('buildJob') ?? 'Build ({platform})',
+            generateNotes: release.boolean('generateNotes') ?? false,
         },
         clean: { paths: clean.strings('paths').map(resolve), deepPaths: clean.strings('deepPaths').map(resolve) },
     };

@@ -70,7 +70,12 @@ export class Publisher {
       const sameRepo = repo === process.env['GITHUB_REPOSITORY']
       this.process.run({
         command: 'gh',
-        args: ['release', 'create', options.tag, '--repo', repo, '--title', title, '--notes', this.notes.render(version, files, options.changes), ...(sameRepo ? ['--verify-tag'] : []), ...assets],
+        args: [
+          'release', 'create', options.tag, '--repo', repo, '--title', title, '--notes', this.notes.render(version, files, options.changes),
+          ...(sameRepo ? ['--verify-tag'] : []),
+          ...(this.config.release.generateNotes ? ['--generate-notes'] : []),
+          ...assets,
+        ],
         env: { GH_TOKEN: process.env['RELEASE_TOKEN'] ?? process.env['GH_TOKEN'] ?? '' },
       })
       this.logger.info('published', { repo, tag: options.tag, packages: assets.length })

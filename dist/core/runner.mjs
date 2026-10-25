@@ -15,8 +15,8 @@ export class ProcessRunner {
     capture(spec) {
         return this.exec(spec, { encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 }, false);
     }
-    /** `verbatim` passes args unescaped on Windows, which `cmd /s /c "..."` requires. */
-    exec(spec, options, verbatim) {
+    /** `verbatim` passes args unescaped on Windows, which `cmd /s /c "..."` requires; `label` names the tool in errors. */
+    exec(spec, options, verbatim, label = spec.command) {
         this.logger.debug(`${spec.command} ${spec.args.join(' ')}`);
         const result = spawnSync(spec.command, spec.args, {
             ...options,
@@ -25,10 +25,10 @@ export class ProcessRunner {
             windowsVerbatimArguments: verbatim,
         });
         if (result.error)
-            throw new CommandError(spec.command, null, { cause: result.error });
+            throw new CommandError(label, null, { cause: result.error });
         if (result.status !== 0) {
             const stderr = typeof result.stderr === 'string' ? result.stderr.trim().slice(-2000) : '';
-            throw new CommandError(spec.command, result.status, stderr === '' ? undefined : { hint: stderr });
+            throw new CommandError(label, result.status, stderr === '' ? undefined : { hint: stderr });
         }
         return typeof result.stdout === 'string' ? result.stdout : '';
     }
@@ -48,12 +48,12 @@ export class ToolchainRunner {
     run(spec) {
         if (this.platform !== 'win32')
             return this.process.run(spec);
-        this.process.exec(this.throughCmd(spec), { stdio: 'inherit' }, true);
+        this.process.exec(this.throughCmd(spec), { stdio: 'inherit' }, true, spec.command);
     }
     capture(spec) {
         if (this.platform !== 'win32')
             return this.process.capture(spec);
-        return this.process.exec(this.throughCmd(spec, ' >nul'), { encoding: 'utf8' }, true);
+        return this.process.exec(this.throughCmd(spec, ' >nul'), { encoding: 'utf8' }, true, spec.command);
     }
     throughCmd(spec, silenceEnv = '') {
         const quote = (arg) => (/^[\w./:=@\\+-]+$/.test(arg) ? arg : `"${arg.replaceAll('"', '\\"')}"`);

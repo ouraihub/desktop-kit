@@ -35,6 +35,8 @@ export interface KitConfig {
     /** When set, publish only accepts candidates from a successful push run of this workflow on main. */
     readonly workflow: string | undefined
     readonly buildJob: string
+    /** Append GitHub's generated "what changed" list (`gh release create --generate-notes`). */
+    readonly generateNotes: boolean
   }
   readonly clean: {
     readonly paths: readonly string[]
@@ -122,7 +124,7 @@ export function loadConfig(appDir: string): KitConfig {
   if (format === 'exe' && (files.length > 0 || binaries.length > 0))
     throw new ConfigError('A portable "exe" is the bare executable; use format "zip" to ship extra files or binaries')
 
-  const release = root.section('release', ['repo', 'title', 'notes', 'workflow', 'buildJob'])
+  const release = root.section('release', ['repo', 'title', 'notes', 'workflow', 'buildJob', 'generateNotes'])
   const repo = release.string('repo')
   if (repo !== undefined && !/^[\w.-]+\/[\w.-]+$/.test(repo)) throw new ConfigError('desktopKit.release.repo must be owner/name')
   const notes = release.string('notes')
@@ -146,6 +148,7 @@ export function loadConfig(appDir: string): KitConfig {
       notesFile: notes === undefined ? undefined : resolve(notes),
       workflow: release.string('workflow'),
       buildJob: release.string('buildJob') ?? 'Build ({platform})',
+      generateNotes: release.boolean('generateNotes') ?? false,
     },
     clean: { paths: clean.strings('paths').map(resolve), deepPaths: clean.strings('deepPaths').map(resolve) },
   }
