@@ -1,11 +1,34 @@
 {
-  "name": "@ouraihub/msvc-kit",
-  "version": "0.1.0",
-  "description": "Portable MSVC toolchain scripts for Rust/Tauri builds on Windows",
+  "name": "@ouraihub/desktop-kit",
+  "version": "0.2.0",
+  "description": "Shared build, release and clean tooling for Tauri desktop apps (portable MSVC on Windows)",
   "license": "MIT",
   "type": "module",
-  "files": ["msvc-env.bat", "compiler-paths.ps1", "cargo-msvc.bat", "setup-msvc.bat"],
+  "engines": {
+    "node": ">=22.18"
+  },
+  "packageManager": "pnpm@12.5.1",
+  "bin": {
+    "desktop-kit": "dist/cli.mjs"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    }
+  },
+  "files": [
+    "dist",
+    "msvc"
+  ],
   "scripts": {
-    "test": "node test.mjs"
+    "build": "tsc -p tsconfig.json",
+    "typecheck": "tsc -p tsconfig.json --noEmit && tsc -p test/tsconfig.json",
+    "test": "node --test \"test/*.test.mts\"",
+    "check": "pnpm run typecheck && pnpm run build && git diff --exit-code -- dist && pnpm run test"
+  },
+  "devDependencies": {
+    "@types/node": "24.10.1",
+    "typescript": "5.9.3"
   }
 }
