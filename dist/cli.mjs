@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 import path from 'node:path';
-import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { readdirSync, readFileSync } from 'node:fs';
 import { parseArgs } from 'node:util';
-import { DesktopKitError, UsageError } from './core/errors.mjs';
+import { CommandError, DesktopKitError, UsageError } from './core/errors.mjs';
 import { ConsoleLogger } from './core/logger.mjs';
 import { DesktopKit } from './kit.mjs';
 const USAGE = `Usage: desktop-kit <command> [options]   (run from the app directory, or set DESKTOP_KIT_APP)
@@ -16,10 +17,20 @@ const USAGE = `Usage: desktop-kit <command> [options]   (run from the app direct
   dev [args]               tauri dev
   cargo <args>             cargo on the Tauri workspace
   clean [--deep]           remove build output (keeps every data/ dir); --deep also node_modules
+  self-test                run desktop-kit's own test suite against this installed copy
 
 Environment: DESKTOP_KIT_LOG=debug|info|warn|error`;
 function main(argv) {
     const [command, ...rest] = argv;
+    // Apps run the pinned copy's suite in their own CI; it needs no app config.
+    if (command === 'self-test') {
+        const dir = path.join(import.meta.dirname, '..', 'dist-test');
+        const files = readdirSync(dir).filter((name) => name.endsWith('.test.mjs')).map((name) => path.join(dir, name));
+        const result = spawnSync(process.execPath, ['--test', ...files], { stdio: 'inherit' });
+        if (result.status !== 0)
+            throw new CommandError('desktop-kit self-test', result.status);
+        return;
+    }
     // dev and cargo forward everything verbatim to tauri / cargo.
     const passthrough = command === 'dev' || command === 'cargo';
     const parsed = parseArgs({
