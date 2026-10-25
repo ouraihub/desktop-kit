@@ -1,5 +1,7 @@
 # desktop-kit
 
+[![CI](https://github.com/ouraihub/desktop-kit/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/ouraihub/desktop-kit/actions/workflows/ci.yml)
+
 Tauri 桌面应用共用的构建、发布和清理工具。Windows 上固定使用便携 MSVC。
 
 - 一条命令完成发布构建：版本一致性检查 → verify 质量门 → `tauri build` → 校验并收集安装包。
