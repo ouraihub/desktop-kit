@@ -1,0 +1,11 @@
+{
+  "name": "@ouraihub/msvc-kit",
+  "version": "0.1.0",
+  "description": "Portable MSVC toolchain scripts for Rust/Tauri builds on Windows",
+  "license": "MIT",
+  "type": "module",
+  "files": ["msvc-env.bat", "compiler-paths.ps1", "cargo-msvc.bat", "setup-msvc.bat"],
+  "scripts": {
+    "test": "node test.mjs"
+  }
+}
