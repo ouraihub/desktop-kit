@@ -1,2 +1,4 @@
 * text=auto eol=lf
 *.bat text eol=crlf
+# Compiled output is committed so git installs need no build step.
+dist/** linguist-generated=true
